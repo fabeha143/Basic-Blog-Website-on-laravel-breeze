@@ -1,10 +1,6 @@
-name: Laravel CI for XAMPP Setup
+name: Laravel CI
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+on: [push, pull_request]
 
 jobs:
   laravel-tests:
@@ -14,8 +10,8 @@ jobs:
       mysql:
         image: mysql:8
         env:
-          MYSQL_DATABASE: laravel_blog
           MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel_blog
         options: >-
           --default-authentication-plugin=mysql_native_password
           --health-cmd="mysqladmin ping --silent"
@@ -34,28 +30,31 @@ jobs:
           extensions: mbstring, bcmath, xml, ctype, json, pdo_mysql
           coverage: none
 
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
       - name: Copy .env
         run: cp .env.example .env
 
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist
-
-      - name: Generate app key
+      - name: Generate application key
         run: php artisan key:generate
 
-      - name: Set Laravel permissions
-        run: chmod -R 755 storage bootstrap/cache
-
-      - name: Configure DB and migrate
+      - name: Run migrations
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
+          DB_PORT: 3306
           DB_DATABASE: laravel_blog
           DB_USERNAME: root
           DB_PASSWORD: root
-        run: |
-          php artisan config:clear
-          php artisan migrate --force
+        run: php artisan migrate
 
       - name: Run tests
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: laravel_blog
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: php artisan test

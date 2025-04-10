@@ -10,14 +10,21 @@ jobs:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: laravel_blog
         options: >-
-          --default-authentication-plugin=mysql_native_password
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: laravel_blog
+      DB_USERNAME: root
+      DB_PASSWORD: ''
 
     steps:
       - name: Checkout code
@@ -28,33 +35,18 @@ jobs:
         with:
           php-version: '8.2'
           extensions: mbstring, bcmath, xml, ctype, json, pdo_mysql
-          coverage: none
 
-      - name: Install Composer dependencies
+      - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Copy .env
         run: cp .env.example .env
 
-      - name: Generate application key
+      - name: Generate key
         run: php artisan key:generate
 
       - name: Run migrations
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: laravel_blog
-          DB_USERNAME: root
-          DB_PASSWORD: root
         run: php artisan migrate
 
       - name: Run tests
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: laravel_blog
-          DB_USERNAME: root
-          DB_PASSWORD: root
         run: php artisan test
